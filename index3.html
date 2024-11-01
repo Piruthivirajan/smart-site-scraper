@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced One-Word Answer Bot with Loader</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
+<style>
+ body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    /* Dark gradient background with a mirror-like effect */
+    background: linear-gradient(to bottom, rgba(199,249,240,0.5) 0%, rgba(11,47,183,0.8) 50%, rgba(217,93,93,0.5) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-attachment: fixed; /* Fixes the gradient background */
+    color: #ffffff; /* Light text color for contrast */
+}
+
+.container {
+    background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent dark background */
+    padding: 40px;
+    border-radius: 10px;
+    /* Lighter box shadow for a subtle effect on dark backgrounds */
+    box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
+    width: 30%;
+    height: 20%;
+    transition: height 0.5s ease-in-out; /* Smooth transition for height change */
+}
+
+.input-group input, .input-group button {
+    /* Adjust input and button styles for better visibility on dark backgrounds */
+}
+
+/* Update other styles as needed for better visibility and contrast */
+
+
+  h1 { color: white; }
+  .input-group { display: flex; margin-bottom: 20px; }
+  .input-group input { flex: 1; padding: 10px; border: 2px solid #ddd; border-right: 0; border-radius: 5px 0 0 5px; outline: none; }
+  .input-group button { padding: 10px 20px; border: 2px solid #8e44ad; background-color: #8e44ad; color: #fff; cursor: pointer; border-radius: 0 5px 5px 0; transition: background-color 0.3s ease; }
+  .input-group button:hover { background-color: #732d91; }
+  .loader { border: 4px solid #f3f3f3; border-top: 4px solid #8e44ad; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; }
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  #initialSummary, #additionalSummaries { display: none; margin-top: 20px; font-size: 20px; color: white; }
+  .summary-title { font-weight: bold; color: #8e44ad; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Ask Me Anything</h1>
+  <div class="input-group">
+    <input type="text" id="questionInput" placeholder="Your question...">
+    <button id="askButton" onclick="getAnswer()"><i class="fas fa-paper-plane"></i> Ask</button>
+  </div>
+  <div id="initialSummary"><div class="summary-title"></div></div>
+  <div id="additionalSummaries"><div class="summary-title"></div></div>
+</div>
+<script>
+     document.getElementById('questionInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault(); // Prevent the default action to stop form submission or any other default action2
+
+    document.getElementById('initialSummary').style.display = 'none';
+        document.getElementById('additionalSummaries').style.display = 'none';
+
+    document.querySelector('.container').style.height = '20%';
+    getAnswer();
+  }
+});
+// JavaScript function getAnswer() here with updates to target #initialSummary and #additionalSummaries
+function getAnswer() {
+  // Clear previous summaries
+  document.getElementById('initialSummary').innerHTML = '<div class="summary-title"></div>';
+  document.getElementById('additionalSummaries').innerHTML = '<div class="summary-title"></div>';
+  
+  const button = document.getElementById('askButton');
+  button.innerHTML = '<div class="loader"></div>'; // Show loader in button
+  var question = document.getElementById('questionInput').value;
+
+  fetch('http://localhost:8012/search?query='+question, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.initialSummary || data.additionalSummaries) {
+        document.getElementById('initialSummary').style.display = 'block';
+        document.getElementById('additionalSummaries').style.display = 'block';
+
+        // Adding content to the sections
+        //document.getElementById('initialSummary').innerHTML = '<div class="summary-title">Overview:</div>' + data.initialSummary;
+        //document.getElementById('additionalSummaries').innerHTML = '<div class="summary-title">Detailed Insights:</div>' + data.additionalSummaries;
+
+        // Slowly display the summaries
+        displayTextSlowly(data.initialSummary, 'initialSummary');
+        setTimeout(() => { // Wait for the initial summary to finish before starting the additional summaries
+            displayTextSlowly(data.additionalSummaries, 'additionalSummaries');
+        }, data.initialSummary.length * 30); // Adjust the delay based on the length of the initial summary
+    }
+    document.querySelector('.container').style.height = '90%'; // Adjust container height on success
+
+    document.querySelector('.container').style.width = '60%'; // Adjust container height on success
+    button.innerHTML = '<i class="fas fa-paper-plane"></i> Ask'; // Restore button text
+
+  })
+  .catch((error) => {
+    console.error('Error:', error);
+    button.innerHTML = '<i class="fas fa-paper-plane"></i> Ask'; // Restore button text if error
+  });
+  function displayTextSlowly(text, elementId, speed = 50) {
+    const element = document.getElementById(elementId);
+    let i = 0;
+    element.innerHTML = ''; // Clear previous content
+    const interval = setInterval(() => {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+        } else {
+            clearInterval(interval); // Stop when all characters are displayed
+        }
+    }, speed);
+}
+
+}
+
+</script>
+</body>
+</html>
